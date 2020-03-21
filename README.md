@@ -7,6 +7,14 @@ See requirements.org (plain-text) for a description of the project.
 
 Make a shared state Websockets drawing program
 
+
+The code for the solution of this assignment is based on:
+https://github.com/uofa-cmput404/cmput404-slides/tree/master/examples/ObserverExampleAJAX
+https://github.com/uofa-cmput404/cmput404-slides/tree/master/examples/WebSocketsExamples
+written by Abram Hindle and Hazel Campbell
+
+The code used for drawing the star pattern was adapted from this: https://stackoverflow.com/questions/25837158/how-to-draw-a-star-by-using-canvas-html5 with attribution given to stackoverflow users Andrei Volgin and markE
+
 Prereqs
 =======
 Create a virtual environment and install the required dependencies.
@@ -26,7 +34,7 @@ freetests.py is LICENSE'D under a BSD-like license:
 
 From ws4py
 
-Copyright (c) 2011-2014, Sylvain Hellegouarch, Abram Hindle
+Copyright (c) 2011-2014, Sylvain Hellegouarch, Abram Hindle, Justin Liew
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
