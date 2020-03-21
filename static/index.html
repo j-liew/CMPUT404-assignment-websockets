@@ -40,31 +40,73 @@ function debug(str) {
     var debugDiv = document.getElementById('debug');
     debugDiv.innerHTML = "" + str;
 }
-debug("Test");
 
 world = {};
 
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
     with(context) {
-        beginPath();                
-        lineWidth = 3;
-        var x = entity["x"];
-        var y = entity["y"];
-        //moveTo(x,y);
-        fillStyle = entity["colour"];
-        strokeStyle = fillStyle;
-        arc(x, y, (entity["radius"])?entity["radius"]:50, 0, 2.0 * Math.PI, false);  
-        stroke();                                
+        
+        var grd = createLinearGradient(0,0, W, H);
+        grd.addColorStop(0, "white");
+        grd.addColorStop(1/3, 'skyblue')
+        grd.addColorStop(2/3, "blue");
+        grd.addColorStop(1, "darkblue")
+
+        fillStyle = grd
+        strokeStyle = fillStyle; 
+        
+        // draw star pattern
+        // adapted from: https://stackoverflow.com/questions/25837158/how-to-draw-a-star-by-using-canvas-html5
+        // with credit to Andrei Volgin and markE
+
+        var rot = Math.PI / 2 * 3;
+        var spikes = entity["spikes"];
+        var cx = entity["x"]
+        var cy = entity["y"]
+        var x = cx
+        var y = cy
+        var outerRadius = entity["outerRadius"];
+        var innerRadius = entity["innerRadius"];
+        var step = Math.PI / spikes;
+        strokeSyle = "#000";
+        beginPath();
+        moveTo(cx, cy - outerRadius)
+        for (i = 0; i < spikes; i++) {
+            x = cx + Math.cos(rot) * outerRadius;
+            y = cy + Math.sin(rot) * outerRadius;
+            lineTo(x, y)
+            rot += step
+
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            lineTo(x, y)
+            rot += step
+        }
+        lineTo(cx, cy - outerRadius)
+        closePath();
+        lineWidth=5;
+        strokeStyle='black';
+        stroke();
+        fillStyle='skyblue';
+        fillStyle = grd;
+        fill();
     }
 }
+
 
 function prepEntity(entity) {
     if (!entity["colour"]) {
         entity["colour"] = "#FF0000";
     }
-    if (!entity["radius"]) {
-        entity["radius"] = 50;
+    if (!entity["outerRadius"]) {
+        entity["outerRadius"] = 60;
+    }
+    if (!entity["innerRadius"]) {
+        entity["innerRadius"] = 30;
+    }
+    if (!entity["spikes"]) {
+        entity["spikes"] = 5;
     }
     return entity;
 }
@@ -121,15 +163,10 @@ function getPosition(e) {
 	}
 }
 
-function addEntity(entity, data) {
-    world[entity] = data;
-    drawNextFrame(); // (but should we?)
-    //XXX: Send a XHTML Request that updates the entity you just modified!
-}
 var counter = 0;
 function addEntityWithoutName(data) {
     var name = "X"+(counter++)%100;
-    addEntity(name,data);
+    return name;
 }
 
 // canvas + mouse/touch is complicated 
@@ -230,18 +267,7 @@ mouse = (function() {
 
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
-mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'blue'});
-});
 
-mouse.mouseuppers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'red'});
-});
-
-mouse.mousedraggers.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'colour':'green',
-                          'radius':10});
-});
 
 
 function update() {
@@ -254,20 +280,49 @@ function wsSetup() {
     socket = new WebSocket(url);
     socket.onopen = function() {
         //XXX: TODO What are you going to do here?
+        console.log("socket open")
     };
     socket.onerror = function(msg) {
         debug("WebSocket Error:" + msg.data);
     };
     socket.onmessage = function(msg) {  
         try {
-            debug("WebSocket Recv:" + msg.data);
-            //XXX: TODO What are you going to do here?            
+            
+            //XXX: TODO What are you going to do here?
+            x = JSON.parse(msg.data)
+            //debug("WebSocket Recv:" + x);
+            k = Object.keys(x)[0]
+            v = x[k]
+            world[k] = v
+            drawNextFrame()
         } catch (e) {
             alert("socket on message: " + e);
         }
-    }; 
-}
+    };
+    mouse.mousedowners.push(function(x,y,clicked,e) {
+    var data = {'x':x,'y':y, 'outerRadius':60, 'innerRadius': 30, 'spikes': 5};
+    var name = addEntityWithoutName(data);
+    socket.send(JSON.stringify({[name]:data}))
+    world[name] = data;
+    drawNextFrame();
+});
 
+mouse.mouseuppers.push(function(x,y,clicked,e) {
+    var data = {'x':x,'y':y, 'outerRadius':60, 'innerRadius': 30, 'spikes': 5};
+    var name = addEntityWithoutName(data);
+    socket.send(JSON.stringify({[name]:data}))
+    world[name] = data;
+    drawNextFrame();
+});
+
+mouse.mousedraggers.push(function(x,y,clicked,e) {
+    var data = {'x':x,'y':y, 'outerRadius':30, 'innerRadius': 15, 'spikes': 5};
+    var name = addEntityWithoutName(data);
+    socket.send(JSON.stringify({[name]:data}))
+    world[name] = data;
+    drawNextFrame();
+}); 
+}
 wsSetup();
 
 
